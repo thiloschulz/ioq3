@@ -1789,12 +1789,21 @@ int VM_CallCompiled(vm_t *vm, int *args)
 	);
 #else
 	__asm__ volatile(
+#if __pic__ > 0
 		"push %%ebx\n"	// save and restore EBX in case binary was built as PIC
 		"mov %2, %%ebx\n"
+#endif
 		"calll *%3\n"
-		"mov %%ebx, %%opStackOfs\n"
+#if __pic__ > 0
+		"mov %%ebx, %2\n"
 		"pop %%ebx\n"
-		: "+S" (programStack), "+D" (opStack), "+g" (opStackOfs)
+#endif
+		: "+S" (programStack), "+D" (opStack),
+#if __pic__ > 0
+		  "+g" (opStackOfs)
+#else
+		  "+b" (opStackOfs)
+#endif
 		: "g" (entryPoint)
 		: "cc", "memory", "%eax", "%ecx", "%edx"
 	);
